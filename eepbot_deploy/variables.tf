@@ -20,3 +20,7 @@ variable "history_length" {
   default = 40
 }
 
+variable "aws_region" {
+  type = string
+  default = "us-west-2"
+}
