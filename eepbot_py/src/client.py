@@ -7,12 +7,12 @@ import discord
 from collections import defaultdict, deque
 from core.config import Config
 from core.logger import logger
-from llm.sleepy import Sleepy
+from llm.sleepy import BaseSleepy
 from llm.utils import build_condensed_message_list
 
 
 class SleepyClient(discord.Client):
-    def __init__(self, config: Config, sleepy: Sleepy, intents, **options):
+    def __init__(self, config: Config, sleepy: BaseSleepy, intents, **options):
         super().__init__(intents=intents, **options)
         self.config = config
         self.llm = sleepy
@@ -32,19 +32,32 @@ class SleepyClient(discord.Client):
             self.config.bot_config.general_channel_id
         )
         if general_channel is not None:
-            to_send = f"HELLO {member.mention} !!! <a:dankies:1335359329431191595> {sleep_user.mention} <a:dankies:1335359329431191595>"
+            to_send = f"HELLO {member.mention} !!! <a:dankies:1335359329431191595> {sleep_user.mention} If no one is here we can chat until then."
             await general_channel.send(to_send)
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         # we do not want the bot to reply to itself
 
-        self.message_history[message.guild.id].append(
-            {
-                "author": message.author.id,
-                "content": message.content,
-                "author_name": message.author.display_name,
-            }
-        )
+        if not self.message_history:
+            async for past_message in message.channel.history(limit=10):
+                self.message_history[message.guild.id].append(
+                    {
+                        "author": past_message.author.id,
+                        "content": past_message.content,
+                        "author_name": past_message.author.display_name,
+                    }
+                )
+        else:   
+            self.message_history[message.guild.id].append(
+                {
+                    "author": message.author.id,
+                    "content": message.content,
+                    "author_name": message.author.display_name,
+                }
+            )
+
+        ## If message was on nsfw channel DO NOT send the images over or even look at them.
+
         logger.debug(
             f"Logged message in guild {message.guild.id} from {message.author.display_name} with content: {message.content}"
         )
@@ -69,14 +82,15 @@ class SleepyClient(discord.Client):
 
         # Simulate typing and send messages one by one
         for message_to_send in chunks:
-            async with message.channel.typing():
-                # Typing duration based on message length and typing speed
-                typing_duration = len(message_to_send) * typing_speed
+            if len(message_to_send) > 0:
+                async with message.channel.typing():
+                    # Typing duration based on message length and typing speed
+                    typing_duration = len(message_to_send) * typing_speed
 
-                typing_duration += random.uniform(0, 1)
+                    typing_duration += random.uniform(0, 1)
 
-                await asyncio.sleep(typing_duration)
-                if message_to_send.startswith("me: "):
-                    message_to_send = message_to_send[4:]
-                await message.channel.send(message_to_send)
-            await asyncio.sleep(random.uniform(0, 1))
+                    await asyncio.sleep(typing_duration)
+                    if message_to_send.startswith("me: "):
+                        message_to_send = message_to_send[4:]
+                    await message.channel.send(message_to_send)
+                await asyncio.sleep(random.uniform(0, 1))
