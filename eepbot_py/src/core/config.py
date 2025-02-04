@@ -17,6 +17,7 @@ class SleepyConfig:
     openrouter_api_token: Optional[str] = os.environ.get("OPENROUTER_API_TOKEN")
     openrouter_model: str = "anthropic/claude-3.5-sonnet"
     openrouter_fallback_model: str = "deepseek/deepseek-r1:nitro"
+    max_images_in_history: int = 6
 
 
 @dataclass

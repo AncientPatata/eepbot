@@ -43,21 +43,25 @@ class SleepyClient(discord.Client):
 
         if not self.message_history:
             async for past_message in message.channel.history(limit=10):
-                self.message_history[message.guild.id].append(
-                    {
+                distilled_message = {
                         "author": past_message.author.id,
                         "content": past_message.content,
                         "author_name": past_message.author.display_name,
-                    }
-                )
-        else:   
-            self.message_history[message.guild.id].append(
-                {
-                    "author": message.author.id,
-                    "content": message.content,
-                    "author_name": message.author.display_name,
                 }
-            )
+                for attachment in message.attachments:
+                    if attachment.content_type in ('image/jpeg', 'image/jpg', 'image/png') and not attachment.is_spoiler():
+                        distilled_message["image"] = attachment.proxy_url
+                self.message_history[message.guild.id].append(distilled_message)
+        else:   
+            distilled_message = {
+                "author": message.author.id,
+                "content": message.content,
+                "author_name": message.author.display_name,
+            }
+            for attachment in message.attachments:
+                if attachment.content_type in ('image/jpeg', 'image/jpg', 'image/png') and not attachment.is_spoiler():
+                    distilled_message["image"] = attachment.proxy_url
+            self.message_history[message.guild.id].append(distilled_message)
 
         ## If message was on nsfw channel DO NOT send the images over or even look at them.
 
@@ -68,15 +72,17 @@ class SleepyClient(discord.Client):
         # print(f"message_history:\n{json.dumps(message_history,indent=4)}\n----")
         if message.author.id == self.user.id:
             return
-
-        message_list = build_condensed_message_list(
-            self.message_history[message.guild.id], self.user.id
-        )
+        
         if self.user.mentioned_in(message):
             logger.debug(
                 f"User was mentioned in message in {message.guild.id} from {message.author.display_name} with content: {message.content}"
             )
             async with message.channel.typing():
+                
+                message_list = self.llm.build_condensed_message_list(
+                    self.message_history[message.guild.id], self.user.id
+                )
+                logger.debug(f"Built condensed image list for message with id {message.id}")     
                 raw_text = self.llm.get_response(message_list)
         else:
             return
