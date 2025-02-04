@@ -31,9 +31,12 @@ class SleepyClient(discord.Client):
         general_channel = await self.fetch_channel(
             self.config.bot_config.general_channel_id
         )
+        logger.info(f"New user joined {member.id}, fetched channel and now to greet them")
         if general_channel is not None:
             to_send = f"HELLO {member.mention} !!! <a:dankies:1335359329431191595> {sleep_user.mention} If no one is here we can chat until then."
             await general_channel.send(to_send)
+            logger.info(f"Greeted new user")
+
 
     async def on_message(self, message: discord.Message):
         # we do not want the bot to reply to itself
@@ -70,6 +73,9 @@ class SleepyClient(discord.Client):
             self.message_history[message.guild.id], self.user.id
         )
         if self.user.mentioned_in(message):
+            logger.debug(
+                f"User was mentioned in message in {message.guild.id} from {message.author.display_name} with content: {message.content}"
+            )
             async with message.channel.typing():
                 raw_text = self.llm.get_response(message_list)
         else:
