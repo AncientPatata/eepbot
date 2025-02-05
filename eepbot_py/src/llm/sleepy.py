@@ -26,7 +26,7 @@ class BaseSleepy:
         """
         raise NotImplementedError("Subclasses must implement `get_response`.")
 
-    def build_condensed_message_list(history, bot_id):
+    def build_condensed_message_list(self, history, bot_id):
         """
         Given a list of messages (dicts) and the bot's ID,
         merge consecutive bot messages into one (joined with \n\n),

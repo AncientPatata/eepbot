@@ -9,6 +9,6 @@ intents.message_content = True
 
 config = Config()
 
-sleepy_llm = BedrockSleepy(config)
+sleepy_llm = OpenRouterSleepy(config)
 client = SleepyClient(config, sleepy_llm, intents=intents)
 client.run(config.bot_config.discord_bot_token, log_handler=None)
